@@ -1,0 +1,9 @@
+numpy<2
+scipy
+theseus-ai==0.1.3
+h5py
+cython
+ninja
+rich
+tqdm
+black
