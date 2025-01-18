@@ -34,6 +34,16 @@ TODO: Add structure that assumes dataset in the format of an `.h5` file, compris
 }
 ```
 
+TODO: add logic for `gripper fully closed -> failure`
+
+## Execute
+
+Evaluate object grasps via:
+
+```sh
+python scripts/evaluate_grasps.py --obj_id 7;
+```
+
 ## References
 
 Repository is adapted from: https://github.com/robotgradient/grasp_diffusion

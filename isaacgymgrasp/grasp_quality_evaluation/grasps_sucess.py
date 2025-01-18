@@ -2,20 +2,33 @@ import os
 import sys
 
 from isaacgym import *
-from isaacgymgrasp.utils.se3dif_utils import get_grasps_acr
+from isaacgymgrasp.utils.se3dif_utils import get_grasps_acr, AcronymGrasps
 from isaacgymgrasp.grasp_sim.environments import IsaacGymWrapper
 from isaacgymgrasp.grasp_sim.environments.grip_eval_env import GraspingGymEnv
 from isaacgymgrasp.utils.geometry_utils import pq_to_H, H_2_Transform
+from isaacgymgrasp import ROOTDIR
 
 import numpy as np
 import torch
+import yaml
+from rich.progress import track as rich_trackbar
+
+
+def get_dataset_order(data_order_filename):
+    # dataset order file
+    # data_order_filepath = Path("DeepSDFv2") / 'configs' / data_order_filename
+    # data_order_filepath = f"{ROOTDIR}/configs/{data_order_filename}"
+    data_order_filepath = f"scripts/{data_order_filename}"
+    with open(data_order_filepath, "r") as f:
+        data_order = yaml.load(f, Loader=yaml.Loader)
+    return data_order
 
 
 class GraspSuccessEvaluator:
     def __init__(
         self,
         data_dir,
-        obj_class=["Mug"],
+        obj_class="Mug",
         n_envs=10,
         idxs=None,
         viewer=True,
@@ -33,19 +46,51 @@ class GraspSuccessEvaluator:
         self.enable_rel_trafo = enable_rel_trafo
 
         ## Build Envs ##
-        if idxs is None:
-            idxs = [0] * n_envs
+        # if idxs is None:
+        #     idxs = [0] * n_envs
 
-        grasps = [self.grasps_all[idx_i] for idx_i in idxs]
+        # setting object indices (TODO: move this outside, class should only get cat,id)
+        dataset_order = get_dataset_order("dataset_camera.yml")
+        latent_ids = []
+        for idx, item in enumerate(
+            rich_trackbar(
+                dataset_order, description=f" Mapping latent ids to grasp files"
+            )
+        ):
+            obj_cat, obj_id = item.split("/")
+            _latent = []
+            for grasp_obj in self.grasps_all:
+                if (obj_cat in grasp_obj.mesh_type) and (obj_id in grasp_obj.mesh_id):
+                    _latent.append(idx)
+            # _latent can be empty and can have >1 elements
+            latent_ids += _latent
+        self.latent_ids_4_grasps = latent_ids
+        print(f"Latent ids for grasps: {self.latent_ids_4_grasps}")
+
+        # fetch grasps in sequence of latent_ids
+        grasps = [
+            self.grasps_all[idx_i]
+            for idx_i in range(len(self.grasps_all))
+            if self.latent_ids_4_grasps[idx_i] in idxs
+        ]
         scales = [grasp.mesh_scale for grasp in grasps]
-        obj_ids = [idx_i for idx_i in idxs]
+        obj_ids = [idx_i for idx_i in self.latent_ids_4_grasps if idx_i in idxs]
         obj_types = [grasp.mesh_type for grasp in grasps]
+        self.meshes_ordered = [grasp_obj.load_mesh() for grasp_obj in grasps]
+        print(f"Total meshes in memory:", len(self.meshes_ordered))
+
+        # # fetch grasps in sequence of latent_ids
+        # grasps = [self.grasps_all[idx_i] for idx_i in idxs]
+        # scales = [grasp.mesh_scale for grasp in grasps]
+        # obj_ids = [idx_i for idx_i in idxs]
+        # obj_types = [grasp.mesh_type for grasp in grasps]
 
         # Note: quaternion here already has convention, w,x,y,z
-        if not (rotations is None):
-            rotations_flat = [rotation for rotation in rotations]
-        else:
-            rotations_flat = [[0, 0, 0, 1] for idx_i in idxs]
+        # if not (rotations is None):
+        #     rotations_flat = [rotation for rotation in rotations]
+        # else:
+        #     rotations_flat = [[0, 0, 0, 1] for idx_i in idxs]
+        rotations_flat = [[0, 0, 0, 1] for idx_i in idxs]  # no rotations considered
 
         env_args = self._get_args(obj_ids, obj_types, scales, rotations_flat)
 
@@ -77,6 +122,7 @@ class GraspSuccessEvaluator:
             }
             arg = {"obj_args": obj_args}
             args.append(arg)
+        args = args * self.n_envs  # same envs in parallel
         return args
 
     def eval_set_of_grasps(self, H):

@@ -165,5 +165,8 @@ def get_grasps_acr(data_dir, class_type):
 
         for grasp_file in cls_grasps_files:
             g_obj = AcronymGrasps(grasp_file, data_dir=data_dir)
+            if g_obj.good_grasps.shape[0] == 0:
+                print(f"> {g_obj.mesh_fname} has no good grasps")
+                continue
             grasp_objs.append(g_obj)
     return grasp_objs

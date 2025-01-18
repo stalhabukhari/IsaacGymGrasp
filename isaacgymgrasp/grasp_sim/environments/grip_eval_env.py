@@ -101,7 +101,7 @@ class GraspingGymEnv:
             obj_type=obj_type,
             obj_id=obj_id,
             obj_name=obj_name,
-            scale=scale,
+            scale=scale/8,
         )
         return self.shape_obj, obj_pose
 
