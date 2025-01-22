@@ -1,36 +1,24 @@
-import os
-import sys
-
 from isaacgym import *
-from isaacgymgrasp.utils.se3dif_utils import get_grasps_acr, AcronymGrasps
+from isaacgymgrasp.utils.se3dif_utils import get_grasps_acr
 from isaacgymgrasp.grasp_sim.environments import IsaacGymWrapper
 from isaacgymgrasp.grasp_sim.environments.grip_eval_env import GraspingGymEnv
 from isaacgymgrasp.utils.geometry_utils import pq_to_H, H_2_Transform
-from isaacgymgrasp import ROOTDIR
 
 import numpy as np
 import torch
-import yaml
-from rich.progress import track as rich_trackbar
-
-
-def get_dataset_order(data_order_filename):
-    # dataset order file
-    # data_order_filepath = Path("DeepSDFv2") / 'configs' / data_order_filename
-    # data_order_filepath = f"{ROOTDIR}/configs/{data_order_filename}"
-    data_order_filepath = f"scripts/{data_order_filename}"
-    with open(data_order_filepath, "r") as f:
-        data_order = yaml.load(f, Loader=yaml.Loader)
-    return data_order
 
 
 class GraspSuccessEvaluator:
+    """
+    Evaluate grasps on single object instance
+    """
+
     def __init__(
         self,
         data_dir,
         obj_class="Mug",
+        obj_id="",
         n_envs=10,
-        idxs=None,
         viewer=True,
         device="cpu",
         rotations=None,
@@ -39,59 +27,29 @@ class GraspSuccessEvaluator:
         self.data_dir = data_dir
         self.device = device
         self.obj_class = obj_class
-        self.grasps_all = get_grasps_acr(data_dir=data_dir, class_type=[obj_class])
         self.n_envs = n_envs
         self.rotations = rotations
         # This argument tells us if the grasp poses are relative w.r.t. the current object pose or not
         self.enable_rel_trafo = enable_rel_trafo
 
-        ## Build Envs ##
-        # if idxs is None:
-        #     idxs = [0] * n_envs
-
-        # setting object indices (TODO: move this outside, class should only get cat,id)
-        dataset_order = get_dataset_order("dataset_camera.yml")
-        latent_ids = []
-        for idx, item in enumerate(
-            rich_trackbar(
-                dataset_order, description=f" Mapping latent ids to grasp files"
-            )
-        ):
-            obj_cat, obj_id = item.split("/")
-            _latent = []
-            for grasp_obj in self.grasps_all:
-                if (obj_cat in grasp_obj.mesh_type) and (obj_id in grasp_obj.mesh_id):
-                    _latent.append(idx)
-            # _latent can be empty and can have >1 elements
-            latent_ids += _latent
-        self.latent_ids_4_grasps = latent_ids
-        print(f"Latent ids for grasps: {self.latent_ids_4_grasps}")
-
         # fetch grasps in sequence of latent_ids
+        grasps_all = get_grasps_acr(data_dir=data_dir, class_type=[obj_class])
         grasps = [
-            self.grasps_all[idx_i]
-            for idx_i in range(len(self.grasps_all))
-            if self.latent_ids_4_grasps[idx_i] in idxs
+            grasps_obj for grasps_obj in grasps_all if grasps_obj.mesh_id == obj_id
         ]
-        scales = [grasp.mesh_scale for grasp in grasps]
-        obj_ids = [idx_i for idx_i in self.latent_ids_4_grasps if idx_i in idxs]
-        obj_types = [grasp.mesh_type for grasp in grasps]
-        self.meshes_ordered = [grasp_obj.load_mesh() for grasp_obj in grasps]
-        print(f"Total meshes in memory:", len(self.meshes_ordered))
+        assert len(grasps) == 1, f"[ERROR] Found {len(grasps)} grasps for {obj_id}"
 
-        # # fetch grasps in sequence of latent_ids
-        # grasps = [self.grasps_all[idx_i] for idx_i in idxs]
-        # scales = [grasp.mesh_scale for grasp in grasps]
-        # obj_ids = [idx_i for idx_i in idxs]
-        # obj_types = [grasp.mesh_type for grasp in grasps]
+        scales = [grasp.mesh_scale for grasp in grasps]
+        obj_ids = [obj_id for _ in grasps]  # [0 for _ in grasps]
+        obj_types = [grasp.mesh_type for grasp in grasps]
 
         # Note: quaternion here already has convention, w,x,y,z
-        # if not (rotations is None):
-        #     rotations_flat = [rotation for rotation in rotations]
-        # else:
-        #     rotations_flat = [[0, 0, 0, 1] for idx_i in idxs]
-        rotations_flat = [[0, 0, 0, 1] for idx_i in idxs]  # no rotations considered
+        if not (rotations is None):
+            rotations_flat = [rotation for rotation in rotations]
+        else:
+            rotations_flat = [[0, 0, 0, 1] for _ in obj_ids]  # no rotations considered
 
+        ## Build Envs ##
         env_args = self._get_args(obj_ids, obj_types, scales, rotations_flat)
 
         self.grasping_env = IsaacGymWrapper(

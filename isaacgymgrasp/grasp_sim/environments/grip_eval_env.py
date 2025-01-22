@@ -89,6 +89,7 @@ class GraspingGymEnv:
         obj_pose.p = gymapi.Vec3(0.0, 0.0, 0.9)
 
         obj_pose.r = gymapi.Quat(quat[0], quat[1], quat[2], quat[3])
+        # obj_pose.r = gymapi.Quat(0, 0, 0, 1)
 
         self.shape_obj = SimpleObject(
             self.gym,
@@ -101,7 +102,7 @@ class GraspingGymEnv:
             obj_type=obj_type,
             obj_id=obj_id,
             obj_name=obj_name,
-            scale=scale/8,
+            scale=scale,
         )
         return self.shape_obj, obj_pose
 

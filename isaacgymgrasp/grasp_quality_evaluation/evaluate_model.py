@@ -68,6 +68,7 @@ class EvaluatePointConditionedGeneratedGrasps:
         # mesh = acronym_grasps.avail_obj[self.obj_id].load_mesh()
         # TODO: dataset sorting via .yml file
         grasps_files = get_grasps_acr(data_dir="", class_type=self.obj_class)
+        # TODO: self.obj_id may not be an integer index
         mesh = grasps_files[self.obj_id].load_mesh()
 
         P = mesh.sample(1000)
@@ -123,6 +124,7 @@ class EvaluatePointConditionedGeneratedGrasps:
         # Load grasp evaluator
         grasp_evaluator = GraspSuccessEvaluator(
             n_envs=self.n_envs,
+            # TODO: self.obj_id may not be an integer index (re-check)
             idxs=[self.obj_id] * self.n_envs,
             obj_class=self.obj_class,
             rotations=[self.q] * self.n_envs,

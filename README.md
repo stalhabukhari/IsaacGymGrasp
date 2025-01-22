@@ -3,9 +3,12 @@
 ## Setup
 
 - Create a python 3.8 conda environment.
-- Install PyTorch:
+- Install PyTorch (and a few other things):
 ```sh
 conda install pytorch==2.0.1 torchvision==0.15.2 pytorch-cuda=11.7 -c pytorch -c nvidia -y
+conda install -c conda-forge suitesparse==5.10.1 scikit-sparse==0.4.8
+pip install cmake lit
+pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable"
 ```
 - Install IsaacGymEnvs: https://github.com/stalhabukhari/IsaacGymEnvs.git
 - Then do:

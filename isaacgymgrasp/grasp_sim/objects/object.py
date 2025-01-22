@@ -83,7 +83,16 @@ class SimpleObject:
         acronym_grasps = get_grasps_acr(
             data_dir=self.data_dir, class_type=[self.obj_type]
         )
-        mesh_rel_path = acronym_grasps[self.obj_id].mesh_fname
+        acronym_grasps = [
+            grasps_obj
+            for grasps_obj in acronym_grasps
+            if grasps_obj.mesh_id == self.obj_id
+        ]
+        assert (
+            len(acronym_grasps) == 1
+        ), f"[ERROR] Found {len(acronym_grasps)} grasps for {self.obj_type}/{self.obj_id}"
+        acr_grasps = acronym_grasps[0]
+        mesh_rel_path = acr_grasps.mesh_fname
         mesh_path_file = os.path.join(self.data_dir, mesh_rel_path)
         res_urdf_path = generate_obj_urdf(mesh_path_file)
 

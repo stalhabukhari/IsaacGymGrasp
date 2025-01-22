@@ -1,8 +1,7 @@
 import argparse
-from isaacgymgrasp.grasp_quality_evaluation.grasps_sucess import GraspSuccessEvaluator
+from pathlib import Path
 
-import numpy as np
-import torch
+from isaacgymgrasp.grasp_quality_evaluation.grasps_sucess import GraspSuccessEvaluator
 
 import numpy as np
 import torch
@@ -65,60 +64,68 @@ def empirical_emd(H_data, H_sample=None, n_grasps=500, episodes=1000) -> tuple:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--obj_id", type=int, required=True)
+    parser.add_argument("--obj_cat", type=str, required=True)
+    parser.add_argument("--obj_id", type=str, required=True)
+    parser.add_argument("--grasp_file", type=Path, required=True)
+    parser.add_argument("--n_envs", type=int, default=1, required=False)
+    parser.add_argument(
+        "--objs_data_dir",
+        type=Path,
+        required=False,
+        default=Path("/media/talha/WD_BLACK/from-ideas-pc/GDIFF-data/"),
+        help="Path to object meshes",
+    )
     parser.add_argument("--headless", action="store_true")
     args = parser.parse_args()
-    
-    headless = False
 
-    from pathlib import Path
-
-    grasp_pred_dir = (
-        Path("/media/talha/E0B28F75B28F4F4A/workspace/repositories/GIGAv2")
-        / "vis/2025-01-05_16-05-27_Gdiff-exp2.3-DsdfV2In-LatentIn-NoVnnIn-noPE-Camera/ae_ckpt_10000_0.13448857069015502.pth-val"
-    )
-
-    obj_idx = args.obj_id
-    h5_files = list(grasp_pred_dir.glob(f"{obj_idx}-*.h5"))
-    assert len(h5_files) == 1
-    h5_file = h5_files[0]
+    assert args.grasp_file.exists(), f"Grasp file {args.grasp_file} does not exist"
+    assert ".h5" in args.grasp_file.name, "Grasp file must be in .h5 format"
 
     # H = torch.eye(4).unsqueeze(0).repeat(1000, 1, 1)
-    grasp_dict = read_hdf5_data(h5_file)
+    grasp_dict = read_hdf5_data(args.grasp_file)
     H_pred = grasp_dict["grasp_H_pred"]
     H_gt = grasp_dict["grasp_H"]
 
     # compute success in simulation
-    n_envs = H_pred.shape[0]
+    assert (
+        H_pred.shape[0] % args.n_envs == 0
+    ), "Number of environments must divide number of grasps"
+
     evaluator = GraspSuccessEvaluator(
-        data_dir="/media/talha/WD_BLACK/from-ideas-pc/GDIFF-data/",
-        # n_envs=1,
-        n_envs=n_envs,
-        obj_class="Camera",
-        idxs=[obj_idx],
+        data_dir=args.objs_data_dir,
+        n_envs=args.n_envs,
+        obj_class=args.obj_cat,
+        obj_id=args.obj_id,
+        rotations=None,
         device="cuda:0",
         viewer=not args.headless,
         enable_rel_trafo=False,
     )
+
+    # evaluator.grasping_env.step()
+    # for _ in range(1000):
+    #     evaluator.grasping_env.step()
+    # exit(0)
 
     H_pred_ = torch.from_numpy(H_pred)
     H_gt_ = torch.from_numpy(H_gt)
 
     #successes = evaluator.eval_set_of_grasps(H_pred_)
     successes = evaluator.eval_set_of_grasps(H_gt_)
-    emd_self = empirical_emd(H_gt)
-    emd_vs = empirical_emd(H_gt, H_pred)
+    # emd_self = empirical_emd(H_gt)
+    # emd_vs = empirical_emd(H_gt, H_pred)
 
-    print(f"Success Rate: {successes} / {H_pred.shape[0]}")
-    print(f"EMD Self: {emd_self[0]} +- {emd_self[1]}")
-    print(f"EMD vs: {emd_vs[0]} +- {emd_vs[1]}")
+    print(f"****** Success Rate: {successes} / {H_pred.shape[0]} ******")
+    # print(f"EMD Self: {emd_self[0]} +- {emd_self[1]}")
+    # print(f"EMD vs: {emd_vs[0]} +- {emd_vs[1]}")
 
     metrics_dict = {
-        "obj_idx": obj_idx,
-        "success_rate": successes / H_pred.shape[0],
-        "emd_self": emd_self,
-        "emd_vs": emd_vs,
+        "objcatid": f"{args.obj_cat}-{args.obj_id}",
+        "success_rate": successes / H_pred.shape[0] * 100,
+        # "emd_self": emd_self,
+        # "emd_vs": emd_vs,
     }
 
     # backing up as I go
-    write_hdf5_data(f"metrics/{obj_idx}-metrics.h5", metrics_dict)
+    #write_hdf5_data(f"metrics/{args.obj_cat}-{args.obj_id}-metrics-gt.h5", metrics_dict)
+    #write_hdf5_data(f"metrics/{args.obj_cat}-{args.obj_id}-metrics-pred.h5", metrics_dict)
