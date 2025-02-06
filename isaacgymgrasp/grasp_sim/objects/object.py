@@ -89,7 +89,7 @@ class SimpleObject:
             if grasps_obj.mesh_id == self.obj_id
         ]
         assert (
-            len(acronym_grasps) == 1
+            len(acronym_grasps) >= 1
         ), f"[ERROR] Found {len(acronym_grasps)} grasps for {self.obj_type}/{self.obj_id}"
         acr_grasps = acronym_grasps[0]
         mesh_rel_path = acr_grasps.mesh_fname

@@ -37,7 +37,9 @@ class GraspSuccessEvaluator:
         grasps = [
             grasps_obj for grasps_obj in grasps_all if grasps_obj.mesh_id == obj_id
         ]
-        assert len(grasps) == 1, f"[ERROR] Found {len(grasps)} grasps for {obj_id}"
+        # assert len(grasps) == 1, f"[ERROR] Found {len(grasps)} grasps for {obj_id}"
+        assert len(grasps) >= 1, f"[ERROR] Found {len(grasps)} grasps for {obj_id}"
+        grasps = [grasps[0]]
 
         scales = [grasp.mesh_scale for grasp in grasps]
         obj_ids = [obj_id for _ in grasps]  # [0 for _ in grasps]
