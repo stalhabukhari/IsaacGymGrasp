@@ -98,8 +98,8 @@ if __name__ == "__main__":
 
     metrics_dict = {
         "objcatid": f"{args.obj_cat}-{args.obj_id}",
-        "emd_self": emd_self,
-        "emd_vs": emd_vs,
+        "emd_self": [float(emd_self[0]), float(emd_self[1])],
+        "emd_vs": [float(emd_vs[0]), float(emd_vs[1])],
     }
 
     # backing up as I go
