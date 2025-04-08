@@ -75,7 +75,7 @@ class GraspSuccessEvaluator:
             obj_args = {
                 "object_type": obj_type,
                 "object_id": obj_id,
-                "object_name": "mug_01",
+                "object_name": f"{obj_type}-{obj_id}",
                 "scale": scale,
                 "obj_or": np.asarray(rotation),
                 "data_dir": self.data_dir,

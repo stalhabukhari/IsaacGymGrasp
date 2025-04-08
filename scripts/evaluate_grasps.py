@@ -22,8 +22,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--objs_data_dir",
         type=Path,
-        required=False,
-        default=Path("/media/talha/WD_BLACK/from-ideas-pc/GDIFF-data/"),
+        required=True,
         help="Path to object meshes",
     )
     parser.add_argument("--metrics_dir", type=Path, required=True)
@@ -77,5 +76,5 @@ if __name__ == "__main__":
     }
 
     # write to disk
-    metrics_fp = args.metrics_dir / f"{args.obj_cat}-{args.obj_id}-sr.yml"
+    metrics_fp = args.metrics_dir / f"{args.obj_cat}_{args.obj_id}-sr.yml"
     write_yaml_file(metrics_dict, metrics_fp)

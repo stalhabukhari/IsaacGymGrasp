@@ -11,6 +11,7 @@ pip install cmake lit
 pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable"
 ```
 - Install IsaacGymEnvs: https://github.com/stalhabukhari/IsaacGymEnvs.git
+    - For `libpython3.8.so.1.0` error: Copy the file from conda directory to /usr/lib/ or /usr/lib64/ ([reference: stackoverflow](https://stackoverflow.com/a/74725104))
 - Then do:
 ```sh
 pip install -r requirements.txt
