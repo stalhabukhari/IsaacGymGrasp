@@ -31,15 +31,22 @@ if __name__ == "__main__":
 
     assert args.grasp_file.exists(), f"Grasp file {args.grasp_file} does not exist"
     assert ".npy" in args.grasp_file.name, "Grasp file must be in .npy format"
-    assert (
-        args.metrics_dir.exists()
-    ), f"Metrics directory {args.metrics_dir} does not exist"
 
     # H = torch.eye(4).unsqueeze(0).repeat(1000, 1, 1)
     H_pred = np.load(args.grasp_file)
     if args.n_grasps is not None:
         H_pred = H_pred[: args.n_grasps]
     H_pred = torch.from_numpy(H_pred).float().to("cuda:0")
+    
+    if "e-" in args.grasp_file.name.split("-s")[1]:
+        mesh_scale = "-".join(args.grasp_file.name.split('-')[1:3])
+        assert "s" in mesh_scale, "Mesh scale not found in grasp file name"
+        mesh_scale = float(mesh_scale.replace("s", ""))
+    else:
+        mesh_scale = args.grasp_file.name.split('-')[1]
+        assert "s" in mesh_scale, "Mesh scale not found in grasp file name"
+        mesh_scale = float(mesh_scale.replace("s", ""))
+    print(f"Mesh scale: {mesh_scale}")
 
     # compute success in simulation
     assert H_pred.shape[0] % args.n_envs == 0, (
@@ -56,6 +63,7 @@ if __name__ == "__main__":
         device="cuda:0",
         viewer=not args.headless,
         enable_rel_trafo=False,
+        mesh_scale=mesh_scale,
     )
 
     # evaluator.grasping_env.step()
@@ -76,5 +84,8 @@ if __name__ == "__main__":
     }
 
     # write to disk
+    assert (
+        args.metrics_dir.exists()
+    ), f"Metrics directory {args.metrics_dir} does not exist"
     metrics_fp = args.metrics_dir / f"{args.obj_cat}_{args.obj_id}-sr.yml"
     write_yaml_file(metrics_dict, metrics_fp)

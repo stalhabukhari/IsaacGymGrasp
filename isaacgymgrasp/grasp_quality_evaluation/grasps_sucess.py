@@ -23,6 +23,7 @@ class GraspSuccessEvaluator:
         device="cpu",
         rotations=None,
         enable_rel_trafo=True,
+        mesh_scale=1.0,
     ):
         self.data_dir = data_dir
         self.device = device
@@ -41,7 +42,8 @@ class GraspSuccessEvaluator:
         assert len(grasps) >= 1, f"[ERROR] Found {len(grasps)} grasps for {obj_id}"
         grasps = [grasps[0]]
 
-        scales = [grasp.mesh_scale for grasp in grasps]
+        #scales = [grasp.mesh_scale for grasp in grasps]
+        scales = [mesh_scale for grasp in grasps]
         obj_ids = [obj_id for _ in grasps]  # [0 for _ in grasps]
         obj_types = [grasp.mesh_type for grasp in grasps]
 
