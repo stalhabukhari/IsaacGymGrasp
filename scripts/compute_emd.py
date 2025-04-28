@@ -84,6 +84,16 @@ if __name__ == "__main__":
 
     H_pred = np.load(args.pred_grasp_file)
     H_gt = np.load(args.gt_grasp_file)
+    
+    if "e-" in args.grasp_file.name.split("-s")[1]:
+        mesh_scale = "-".join(args.grasp_file.name.split('-')[1:3])
+        assert "s" in mesh_scale, "Mesh scale not found in grasp file name"
+        mesh_scale = float(mesh_scale.replace("s", ""))
+    else:
+        mesh_scale = args.grasp_file.name.split('-')[1]
+        assert "s" in mesh_scale, "Mesh scale not found in grasp file name"
+        mesh_scale = float(mesh_scale.replace("s", ""))
+    print(f"Mesh scale: {mesh_scale}")
 
     if args.n_grasps is not None:
         H_pred = H_pred[: args.n_grasps]
@@ -103,5 +113,5 @@ if __name__ == "__main__":
     }
 
     # backing up as I go
-    metrics_fp = args.metrics_dir / f"{args.obj_cat}-{args.obj_id}-emd.yml"
+    metrics_fp = args.metrics_dir / f"{args.obj_cat}-{args.obj_id}-s{mesh_scale}-emd.yml"
     write_yaml_file(metrics_dict, metrics_fp)

@@ -87,5 +87,5 @@ if __name__ == "__main__":
     assert (
         args.metrics_dir.exists()
     ), f"Metrics directory {args.metrics_dir} does not exist"
-    metrics_fp = args.metrics_dir / f"{args.obj_cat}_{args.obj_id}-sr.yml"
+    metrics_fp = args.metrics_dir / f"{args.obj_cat}_{args.obj_id}-s{mesh_scale}-sr.yml"
     write_yaml_file(metrics_dict, metrics_fp)
