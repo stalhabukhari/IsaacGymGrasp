@@ -85,12 +85,12 @@ if __name__ == "__main__":
     H_pred = np.load(args.pred_grasp_file)
     H_gt = np.load(args.gt_grasp_file)
     
-    if "e-" in args.grasp_file.name.split("-s")[1]:
+    if "e-" in args.pred_grasp_file.name.split("-s")[1]:
         mesh_scale = "-".join(args.grasp_file.name.split('-')[1:3])
         assert "s" in mesh_scale, "Mesh scale not found in grasp file name"
         mesh_scale = float(mesh_scale.replace("s", ""))
     else:
-        mesh_scale = args.grasp_file.name.split('-')[1]
+        mesh_scale = args.pred_grasp_file.name.split('-')[1]
         assert "s" in mesh_scale, "Mesh scale not found in grasp file name"
         mesh_scale = float(mesh_scale.replace("s", ""))
     print(f"Mesh scale: {mesh_scale}")
